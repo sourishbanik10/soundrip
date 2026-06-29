@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: MP3 Converter API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: convert
+    description: Video conversion operations
 paths:
   /healthz:
     get:
@@ -24,6 +25,73 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /convert/youtube:
+    post:
+      operationId: convertYoutube
+      tags: [convert]
+      summary: Convert YouTube video to MP3
+      description: Submit a YouTube URL for conversion to MP3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/YoutubeInput"
+      responses:
+        "202":
+          description: Conversion job started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversionJob"
+        "400":
+          description: Invalid URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /convert/status/{jobId}:
+    get:
+      operationId: getConversionStatus
+      tags: [convert]
+      summary: Get conversion job status
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversionStatus"
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /convert/history:
+    get:
+      operationId: getConversionHistory
+      tags: [convert]
+      summary: Get recent conversion history
+      responses:
+        "200":
+          description: List of recent conversions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConversionStatus"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +102,49 @@ components:
       required:
         - status
 
+    YoutubeInput:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          description: YouTube video URL
+
+    ConversionJob:
+      type: object
+      required: [jobId]
+      properties:
+        jobId:
+          type: string
+        title:
+          type: ["string", "null"]
+
+    ConversionStatus:
+      type: object
+      required: [jobId, status, createdAt]
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        title:
+          type: ["string", "null"]
+        filename:
+          type: ["string", "null"]
+        progress:
+          type: ["number", "null"]
+        error:
+          type: ["string", "null"]
+        source:
+          type: ["string", "null"]
+          description: "youtube or upload"
+        createdAt:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "MP3 Converter"
+version = "1.0.0"
+id = "artifacts/mp3-converter"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20050
+
+[services.development]
+run = "pnpm --filter @workspace/mp3-converter run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mp3-converter", "run", "build" ]
+publicDir = "artifacts/mp3-converter/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20050"
+BASE_PATH = "/"
