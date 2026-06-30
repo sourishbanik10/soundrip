@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "6P-WSUdLSFBYImU2EuMZy"
+uri = "file://soundrip-source.zip"
+type = "unspecified"
+title = "SoundRip — Full Source Code"
