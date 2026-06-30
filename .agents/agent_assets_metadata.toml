@@ -6,3 +6,9 @@ id = "6P-WSUdLSFBYImU2EuMZy"
 uri = "file://soundrip-source.zip"
 type = "unspecified"
 title = "SoundRip — Full Source Code"
+
+[[outputs]]
+id = "gHtg1vjv6RheUhYU0jjiQ"
+uri = "file://soundrip-full.zip"
+type = "unspecified"
+title = "SoundRip — Complete Source Code"
