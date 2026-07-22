@@ -2,6 +2,7 @@ import { Router } from "express";
 import { exec } from "child_process";
 import { promisify } from "util";
 import path from "path";
+import os from "os";
 import fs from "fs";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
@@ -10,7 +11,8 @@ import ffmpeg from "fluent-ffmpeg";
 const execAsync = promisify(exec);
 const router = Router();
 
-const TMP_DIR = "/tmp/mp3-converter";
+const TMP_DIR = path.join(os.tmpdir(), "mp3-converter");
+const REDIRECT = process.platform === "win32" ? "2>nul" : "2>/dev/null";
 fs.mkdirSync(TMP_DIR, { recursive: true });
 
 type JobStatus = "pending" | "processing" | "completed" | "failed";
@@ -67,18 +69,18 @@ async function downloadYoutube(url: string, jobId: string): Promise<{ videoPath:
   const job = jobs.get(jobId);
 
   const { stdout: titleOut } = await execAsync(
-    `yt-dlp --get-title --no-playlist "${url}" 2>/dev/null || echo "Unknown Title"`
+    `yt-dlp --get-title --no-playlist "${url}" ${REDIRECT} || echo "Unknown Title"`
   );
   const title = titleOut.trim() || "Unknown Title";
   if (job) job.title = title;
 
   const { stdout: extOut } = await execAsync(
-    `yt-dlp --get-filename --no-playlist -o "${videoPath}" "${url}" 2>/dev/null`
+    `yt-dlp --get-filename --no-playlist -o "${videoPath}" "${url}" ${REDIRECT}`
   );
   const resolvedPath = extOut.trim();
 
   await execAsync(
-    `yt-dlp --no-playlist -f "bestaudio/best" -o "${videoPath}" "${url}" 2>/dev/null`
+    `yt-dlp --no-playlist -f "bestaudio/best" -o "${videoPath}" "${url}" ${REDIRECT}`
   );
 
   return { videoPath: resolvedPath, title };
@@ -98,8 +100,17 @@ const upload = multer({
 });
 
 router.post("/convert/youtube", async (req, res) => {
-  const { url } = req.body as { url?: string };
-  if (!url || typeof url !== "string" || !url.includes("youtube") && !url.includes("youtu.be")) {
+  const body = req.body as Record<string, unknown> | undefined;
+  const rawUrl = typeof body?.url === "string"
+    ? body.url
+    : typeof body?.data === "object" && body.data !== null && "url" in body.data && typeof (body.data as Record<string, unknown>).url === "string"
+      ? (body.data as Record<string, unknown>).url
+      : typeof body === "string"
+        ? body
+        : null;
+
+  const url = typeof rawUrl === "string" ? rawUrl.trim() : null;
+  if (!url || (!url.includes("youtube") && !url.includes("youtu.be"))) {
     res.status(400).json({ error: "A valid YouTube URL is required" });
     return;
   }
