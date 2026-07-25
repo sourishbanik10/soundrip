@@ -25,13 +25,13 @@ export function YoutubeInput({ onStart }: YoutubeInputProps) {
           setUrl("");
           onStart(data.jobId);
         },
-        onError: (err) => {
-          toast({
-            title: "Error starting conversion",
-            description: err.error || "Please check the URL and try again.",
-            variant: "destructive",
-          });
-        }
+        onError: () => {
+  toast({
+    title: "Error starting conversion",
+    description: "Please check the URL and try again.",
+    variant: "destructive",
+  });
+}
       }
     );
   };
